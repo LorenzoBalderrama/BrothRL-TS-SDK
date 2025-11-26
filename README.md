@@ -375,11 +375,7 @@ fs.writeFileSync('trained_policy.json', JSON.stringify(policyData));
 
 ## 🎓 Examples
 
-Check out the `examples/` directory for complete working examples:
-
-- **[simple-agent](examples/simple-agent/)**: Basic RL voice agent
-- **[historical-training](examples/historical-training/)**: Train from past data
-- **[conversationrelay-agent](examples/conversationrelay-agent/)**: Real-time Twilio ConversationRelay with WebSocket
+The snippets above show basic usage. Complete example applications are coming soon.
 
 ## 🧪 Testing
 
@@ -406,8 +402,8 @@ MIT License - see LICENSE file for details
 
 ## 💬 Support
 
-- **Issues**: [GitHub Issues](https://github.com/yourusername/rl-voice-sdk/issues)
-- **Discussions**: [GitHub Discussions](https://github.com/yourusername/rl-voice-sdk/discussions)
+- **Issues**: [GitHub Issues](https://github.com/LorenzoBalderrama/RL-Voice-SDK/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/LorenzoBalderrama/RL-Voice-SDK/discussions)
 
 ## 🙏 Acknowledgments
 

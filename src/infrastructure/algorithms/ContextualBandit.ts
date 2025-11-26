@@ -1,91 +1,90 @@
 import { Policy } from '../../domain/base/Policy';
 import { PolicyConfig } from '../../domain/interfaces/IPolicy';
+import { IPolicyStorage } from '../../domain/interfaces/IPolicyStorage';
 import { State } from '../../domain/entities/State';
 import { Action } from '../../domain/entities/Action';
+import { MemoryStorage } from '../storage/MemoryStorage';
 
 /**
  * Statistics for each arm (action) in a given context
  */
-interface ArmStats {
-  /** Number of times this arm was pulled */
+export interface ArmStats {
   pulls: number;
-
-  /** Sum of rewards received */
   totalReward: number;
-
-  /** Average reward */
   averageReward: number;
 }
 
-/**
- * Contextual Bandit configuration
- */
 export interface ContextualBanditConfig extends PolicyConfig {
-  /** Initial reward estimate for unseen action-context pairs */
   initialReward?: number;
-
-  /** Confidence bonus for upper confidence bound */
   confidenceBonus?: number;
-
-  /** Whether to use UCB (Upper Confidence Bound) instead of simple average */
   useUCB?: boolean;
+  /** 
+   * Optional storage provider. Defaults to MemoryStorage.
+   * Inject a Redis adapter here for Enterprise mode.
+   */
+  storage?: IPolicyStorage;
 }
 
 /**
- * Contextual Bandit implementation
- * 
- * This algorithm maintains statistics for each action in different contexts.
- * It learns which actions work best in which situations.
+ * Contextual Bandit implementation (Stateless / Async)
  */
 export class ContextualBandit extends Policy {
-  private armStats: Map<string, Map<string, ArmStats>>;
-  private banditConfig: Required<ContextualBanditConfig>;
+  private banditConfig: Required<Omit<ContextualBanditConfig, 'storage'>>;
+  private storage: IPolicyStorage;
 
   constructor(config: ContextualBanditConfig) {
     super(config);
 
     this.banditConfig = {
-      ...this.config,
       initialReward: config.initialReward ?? 0.0,
       confidenceBonus: config.confidenceBonus ?? 2.0,
       useUCB: config.useUCB ?? true,
+      // ... other Policy defaults handled by super
+      learningRate: config.learningRate ?? 0.1,
+      explorationRate: config.explorationRate ?? 0.1,
+      minExplorationRate: config.minExplorationRate ?? 0.01,
+      explorationDecay: config.explorationDecay ?? 0.995,
+      seed: config.seed ?? Date.now(),
+      actionSpace: config.actionSpace
     };
 
-    // Map: context -> action -> stats
-    this.armStats = new Map();
+    // dependency injection for storage
+    this.storage = config.storage || new MemoryStorage();
   }
 
   /**
    * Select an action given the current state
    */
-  selectAction(state: State): Action {
+  async selectAction(state: State): Promise<Action> {
     this.incrementStep();
 
-    // Epsilon-greedy exploration
     if (this.shouldExplore()) {
       return this.selectRandomAction();
     }
 
-    // Exploit: select best action for this context
     return this.selectBestAction(state);
   }
 
   /**
-   * Select the best action for a given state
+   * Select the best action for a given state by querying storage
    */
-  private selectBestAction(state: State): Action {
+  private async selectBestAction(state: State): Promise<Action> {
     const context = state.getContextKey();
     const actions = this.actionSpace.getAllActions();
 
     let bestAction = actions[0];
     let bestValue = -Infinity;
 
-    for (const action of actions) {
-      const value = this.getActionValue(context, action.type);
+    // In a stateless design, we must fetch stats for all candidate actions
+    // Optimization: In the future, we could use MGET (Redis) to fetch all at once
+    const actionValues = await Promise.all(
+      actions.map(action => this.getActionValue(context, action.type))
+    );
 
-      if (value > bestValue) {
-        bestValue = value;
-        bestAction = action;
+    for (let i = 0; i < actions.length; i++) {
+      if (actionValues[i] > bestValue) {
+        bestValue = actionValues[i];
+        bestAction = actions[i];
       }
     }
 
@@ -95,206 +94,104 @@ export class ContextualBandit extends Policy {
   /**
    * Get the estimated value of an action in a context
    */
-  private getActionValue(context: string, actionType: string): number {
-    const stats = this.getArmStats(context, actionType);
+  private async getActionValue(context: string, actionType: string): Promise<number> {
+    const stats = await this.getArmStats(context, actionType);
 
     if (stats.pulls === 0) {
       return this.banditConfig.initialReward;
     }
 
-    // Use UCB if enabled
     if (this.banditConfig.useUCB) {
-      const contextStats = this.armStats.get(context);
-      const totalPulls = contextStats
-        ? Array.from(contextStats.values()).reduce((sum, s) => sum + s.pulls, 0)
-        : 0;
+      const totalPulls = await this.getContextTotalPulls(context);
 
       if (totalPulls === 0) {
         return this.banditConfig.initialReward;
       }
 
-      // UCB1 formula: average + confidence bonus * sqrt(ln(total) / pulls)
       const exploration = this.banditConfig.confidenceBonus *
         Math.sqrt(Math.log(totalPulls) / stats.pulls);
 
       return stats.averageReward + exploration;
     }
 
-    // Simple average
     return stats.averageReward;
   }
 
   /**
    * Update the policy based on observed reward
    */
-  update(state: State, action: Action, reward: number): void {
+  async update(state: State, action: Action, reward: number): Promise<void> {
     const context = state.getContextKey();
     const actionType = action.type;
 
-    // Get or create stats
-    const stats = this.getArmStats(context, actionType);
+    // 1. Get current stats
+    const stats = await this.getArmStats(context, actionType);
 
-    // Update statistics
+    // 2. Update values
     stats.pulls += 1;
     stats.totalReward += reward;
     stats.averageReward = stats.totalReward / stats.pulls;
 
-    // Store back
-    this.setArmStats(context, actionType, stats);
+    // 3. Save back to storage
+    // Note: In a high-concurrency distributed env, this should ideally be an atomic Lua script
+    // but for this phase, read-modify-write is acceptable.
+    await this.saveArmStats(context, actionType, stats);
+    await this.incrementContextTotalPulls(context);
   }
 
-  /**
-   * Get statistics for an action in a context
-   */
-  private getArmStats(context: string, actionType: string): ArmStats {
-    if (!this.armStats.has(context)) {
-      this.armStats.set(context, new Map());
-    }
+  // --- Storage Helpers ---
 
-    const contextMap = this.armStats.get(context)!;
-
-    if (!contextMap.has(actionType)) {
-      contextMap.set(actionType, {
-        pulls: 0,
-        totalReward: 0,
-        averageReward: this.banditConfig.initialReward,
-      });
-    }
-
-    return contextMap.get(actionType)!;
+  private getStorageKey(context: string, actionType: string): string {
+    return `bandit:arm:${context}:${actionType}`;
   }
 
-  /**
-   * Set statistics for an action in a context
-   */
-  private setArmStats(context: string, actionType: string, stats: ArmStats): void {
-    if (!this.armStats.has(context)) {
-      this.armStats.set(context, new Map());
-    }
-
-    this.armStats.get(context)!.set(actionType, stats);
+  private getContextKey(context: string): string {
+    return `bandit:context:${context}`;
   }
 
-  /**
-   * Get all statistics (for debugging/analysis)
-   */
-  getAllStats(): Map<string, Map<string, ArmStats>> {
-    return new Map(this.armStats);
-  }
+  private async getArmStats(context: string, actionType: string): Promise<ArmStats> {
+    const key = this.getStorageKey(context, actionType);
+    const stats = await this.storage.get<ArmStats>(key);
 
-  /**
-   * Get statistics for a specific context
-   */
-  getContextStats(context: string): Map<string, ArmStats> | undefined {
-    return this.armStats.get(context);
-  }
-
-  /**
-   * Get the best action for a given context (without exploration)
-   */
-  getBestActionForContext(context: string): { action: string; value: number } | null {
-    const actions = this.actionSpace.getAllActions();
-
-    let bestActionType = '';
-    let bestValue = -Infinity;
-
-    for (const action of actions) {
-      const stats = this.getArmStats(context, action.type);
-      if (stats.pulls > 0 && stats.averageReward > bestValue) {
-        bestValue = stats.averageReward;
-        bestActionType = action.type;
-      }
-    }
-
-    return bestActionType ? { action: bestActionType, value: bestValue } : null;
-  }
-
-  /**
-   * Serialize to JSON
-   */
-  toJSON(): any {
-    const armStatsObj: Record<string, Record<string, ArmStats>> = {};
-
-    for (const [context, actionsMap] of this.armStats.entries()) {
-      armStatsObj[context] = {};
-      for (const [actionType, stats] of actionsMap.entries()) {
-        armStatsObj[context][actionType] = stats;
-      }
-    }
-
-    return {
-      config: this.banditConfig,
-      armStats: armStatsObj,
-      stepCount: this.stepCount,
+    return stats || {
+      pulls: 0,
+      totalReward: 0,
+      averageReward: this.banditConfig.initialReward,
     };
   }
 
-  /**
-   * Load from JSON
-   */
-  fromJSON(json: any): void {
-    if (json.config) {
-      Object.assign(this.banditConfig, json.config);
-    }
+  private async saveArmStats(context: string, actionType: string, stats: ArmStats): Promise<void> {
+    const key = this.getStorageKey(context, actionType);
+    await this.storage.set(key, stats);
+  }
 
-    if (json.stepCount !== undefined) {
-      this.stepCount = json.stepCount;
-    }
+  private async getContextTotalPulls(context: string): Promise<number> {
+    const key = this.getContextKey(context);
+    const data = await this.storage.get<{ totalPulls: number }>(key);
+    return data?.totalPulls || 0;
+  }
 
-    if (json.armStats) {
-      this.armStats.clear();
-
-      for (const [context, actionsObj] of Object.entries(json.armStats)) {
-        const actionsMap = new Map<string, ArmStats>();
-
-        for (const [actionType, stats] of Object.entries(actionsObj as Record<string, ArmStats>)) {
-          actionsMap.set(actionType, stats);
-        }
-
-        this.armStats.set(context, actionsMap);
-      }
-    }
+  private async incrementContextTotalPulls(context: string): Promise<void> {
+    const key = this.getContextKey(context);
+    const current = await this.getContextTotalPulls(context);
+    await this.storage.set(key, { totalPulls: current + 1 });
   }
 
   /**
-   * Get policy statistics
+   * Reset is now a dangerous operation in production
    */
-  getStats(): Record<string, any> {
-    const baseStats = super.getStats();
-
-    return {
-      ...baseStats,
-      totalContexts: this.armStats.size,
-      totalArmPulls: this.getTotalPulls(),
-      config: {
-        useUCB: this.banditConfig.useUCB,
-        confidenceBonus: this.banditConfig.confidenceBonus,
-        initialReward: this.banditConfig.initialReward,
-      },
-    };
-  }
-
-  /**
-   * Get total number of arm pulls across all contexts
-   */
-  private getTotalPulls(): number {
-    let total = 0;
-
-    for (const actionsMap of this.armStats.values()) {
-      for (const stats of actionsMap.values()) {
-        total += stats.pulls;
-      }
-    }
-
-    return total;
-  }
-
-  /**
-   * Reset the policy
-   */
-  reset(): void {
+  async reset(): Promise<void> {
     super.reset();
-    this.armStats.clear();
+    await this.storage.clear();
+  }
+
+  // Note: toJSON and fromJSON are less relevant in the storage-backed model
+  // but can be kept for config serialization.
+  toJSON(): any {
+    return { config: this.banditConfig };
+  }
+
+  fromJSON(json: any): void {
+    if (json.config) Object.assign(this.banditConfig, json.config);
   }
 }
-

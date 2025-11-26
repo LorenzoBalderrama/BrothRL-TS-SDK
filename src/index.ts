@@ -12,6 +12,7 @@ export {
 
 // Domain interfaces
 export { IPolicy, PolicyConfig } from './domain/interfaces/IPolicy';
+export { IPolicyStorage } from './domain/interfaces/IPolicyStorage';
 
 // Domain base classes
 export { Policy } from './domain/base/Policy';
@@ -26,6 +27,7 @@ export { EpsilonGreedy, EpsilonGreedyConfig } from './infrastructure/algorithms/
 // Data infrastructure
 export { IParser, BaseParser } from './infrastructure/data/Parser';
 export { DefaultParser, FlexibleParser } from './infrastructure/data/DefaultParser';
+export { MemoryStorage } from './infrastructure/storage/MemoryStorage';
 
 // Adapter infrastructure
 export { BaseAdapter, PlatformRequest, PlatformResponse, AdapterConfig } from './infrastructure/adapters/BaseAdapter';
@@ -45,4 +47,4 @@ export { Guardrails, GuardrailConfig, GuardrailRule, Violation, CommonGuardrails
 export { Monitor, MonitorConfig, LogEntry, Metric } from './infrastructure/safety/Monitor';
 
 // Version
-export const VERSION = '0.2.0';
+export const VERSION = '0.2.1';
