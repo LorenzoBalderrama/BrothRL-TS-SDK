@@ -1,5 +1,7 @@
 # BrothRL SDK
 
+> **The Broth to your AI kitchen 🍜**
+>
 > **Make your voice agents intelligent** - A TypeScript SDK for adding Reinforcement Learning to voice applications.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -15,6 +17,7 @@ Voice apps today make **dumb decisions**. They follow hard-coded conversation fl
 - **No adaptation**: Can't learn from what actually works
 - **Missed optimization**: No way to improve conversions, satisfaction, or efficiency
 - **Wasted historical data**: Thousands of call recordings with no way to extract strategies
+- **Messy Data**: Voice transcripts are unstructured and hard to learn from directly
 
 ### What This SDK Provides
 
@@ -24,6 +27,7 @@ Voice apps today make **dumb decisions**. They follow hard-coded conversation fl
 ✅ **Safe production deployment** - Built-in guardrails and fallbacks  
 ✅ **Platform agnostic** - Works with any voice platform (Vapi, Retell, Twilio, etc.)  
 ✅ **Continuous improvement** - Policies get better as more data comes in
+✅ **Messy Data Solutions** - Built-in tools to convert raw text to structured states
 
 ## 🚀 Quick Start
 
@@ -101,6 +105,45 @@ const state = new State({
     accountAge: 'new',
   },
 });
+```
+
+### Handling Messy Data (StateSchema)
+
+**New in v0.4.0**: Voice data is messy. The `StateSchema` utility helps you convert raw text into structured features that the Bandit can actually learn from.
+
+```typescript
+import { StateSchema, Feature } from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+
+// 1. Define your Schema (Zod-style)
+const SalesState = StateSchema.define({
+  // Enum: Buckets text into specific categories
+  intent: Feature.enum(['price_objection', 'info_request', 'closing'])
+    .matches({
+      price_objection: ['too expensive', 'cost', 'price', 'budget'],
+      info_request: ['tell me more', 'how does it work', 'details'],
+      closing: ['buy', 'sign up', 'ready']
+    })
+    .default('info_request'),
+
+  // Boolean: Detects presence of concepts
+  is_angry: Feature.boolean()
+    .matches({ 
+      true: ['stupid', 'hate', 'annoying', 'stop'] 
+    }),
+
+  // Custom Extractor: For complex logic
+  deal_size: Feature.number()
+    .extract((text) => {
+      const match = text.match(/\$(\d+)/);
+      return match ? parseInt(match[1]) : 0;
+    })
+});
+
+// 2. Auto-convert Text -> BrothRL State
+const state = SalesState.toState("I think it's too expensive for my $500 budget.");
+
+console.log(state.toJSON().features);
+// Output: { intent: 'price_objection', is_angry: false, deal_size: 500 }
 ```
 
 ### Action
@@ -363,6 +406,7 @@ fs.writeFileSync('trained_policy.json', JSON.stringify(policyData));
 - **Schema**: Standard conversation data format
 - **Parsers**: Convert various formats to training data
 - **FlexibleParser**: Handles different conversation log formats
+- **StateSchema** (New): Zod-like tool to convert text to structured features
 
 ### Adapters
 - **VapiAdapter**: Vapi platform integration
@@ -415,4 +459,3 @@ Built with inspiration from:
 ---
 
 **Made with ❤️ for the voice AI community**
-

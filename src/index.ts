@@ -46,5 +46,8 @@ export { WebhookAdapter } from './infrastructure/adapters/WebhookAdapter';
 export { Guardrails, GuardrailConfig, GuardrailRule, Violation, CommonGuardrails } from './infrastructure/safety/Guardrails';
 export { Monitor, MonitorConfig, LogEntry, Metric } from './infrastructure/safety/Monitor';
 
+// Utilities
+export { StateSchema, Feature, FeatureConfig } from './infrastructure/utils/StateSchema';
+
 // Version
-export const VERSION = '0.2.1';
+export const VERSION = '0.3.0';
