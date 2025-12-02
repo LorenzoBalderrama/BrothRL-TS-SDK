@@ -1,5 +1,5 @@
 {
-  "name": "@lorenzobalderrama-codingsoup/broth-rl-sdk",
+  "name": "broth-rl-sdk",
   "version": "0.4.0",
   "description": "BrothRL - Reinforcement Learning SDK for Voice Agents",
   "main": "dist/index.js",

@@ -34,7 +34,7 @@ Voice apps today make **dumb decisions**. They follow hard-coded conversation fl
 ### Installation
 
 ```bash
-npm install @lorenzobalderrama-codingsoup/broth-rl-sdk
+npm install broth-rl-sdk
 ```
 
 ### Basic Usage
@@ -46,7 +46,7 @@ import {
   ActionType,
   ContextualBandit,
   State,
-} from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+} from 'broth-rl-sdk';
 
 // 1. Define your action space
 const actionSpace = new ActionSpace();
@@ -112,7 +112,7 @@ const state = new State({
 **New in v0.4.0**: Voice data is messy. The `StateSchema` utility helps you convert raw text into structured features that the Bandit can actually learn from.
 
 ```typescript
-import { StateSchema, Feature } from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+import { StateSchema, Feature } from 'broth-rl-sdk';
 
 // 1. Define your Schema (Zod-style)
 const SalesState = StateSchema.define({
@@ -195,7 +195,7 @@ const delayed = reward.calculateDelayed({
 Production voice apps need safety constraints:
 
 ```typescript
-import { Guardrails, CommonGuardrails } from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+import { Guardrails, CommonGuardrails } from 'broth-rl-sdk';
 
 const guardrails = new Guardrails({
   rules: [
@@ -215,7 +215,7 @@ const safeAction = guardrails.validate(state, action);
 Track what your agent is doing:
 
 ```typescript
-import { Monitor } from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+import { Monitor } from 'broth-rl-sdk';
 
 const monitor = new Monitor();
 
@@ -236,7 +236,7 @@ console.log(monitor.createReport());
 ### Vapi
 
 ```typescript
-import { VapiAdapter } from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+import { VapiAdapter } from 'broth-rl-sdk';
 
 const adapter = new VapiAdapter();
 adapter.setPolicy(policy);
@@ -251,7 +251,7 @@ app.post('/vapi-webhook', async (req, res) => {
 ### Twilio Voice (TwiML)
 
 ```typescript
-import { TwilioAdapter } from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+import { TwilioAdapter } from 'broth-rl-sdk';
 
 const adapter = new TwilioAdapter({ actionUrl: '/voice/action' });
 adapter.setPolicy(policy);
@@ -266,7 +266,7 @@ app.post('/voice', async (req, res) => {
 ### Twilio ConversationRelay (Real-time WebSocket)
 
 ```typescript
-import { TwilioConversationRelayAdapter } from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+import { TwilioConversationRelayAdapter } from 'broth-rl-sdk';
 
 const adapter = new TwilioConversationRelayAdapter({
   policy,
@@ -296,7 +296,7 @@ wss.on('connection', (ws) => {
 ### Generic Webhook
 
 ```typescript
-import { WebhookAdapter } from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+import { WebhookAdapter } from 'broth-rl-sdk';
 
 const adapter = new WebhookAdapter();
 adapter.setPolicy(policy);
@@ -313,7 +313,7 @@ const response = await adapter.handleRequest({
 Turn your existing call logs into an optimized policy:
 
 ```typescript
-import { FlexibleParser } from '@lorenzobalderrama-codingsoup/broth-rl-sdk';
+import { FlexibleParser } from 'broth-rl-sdk';
 
 // 1. Load your conversation data
 const conversations = [
