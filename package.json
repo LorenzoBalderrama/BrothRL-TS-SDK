@@ -1,6 +1,6 @@
 {
   "name": "@lorenzobalderrama-codingsoup/broth-rl-sdk",
-  "version": "0.2.1",
+  "version": "0.3.0",
   "description": "BrothRL - Reinforcement Learning SDK for Voice Agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -51,4 +51,3 @@
   },
   "homepage": "https://github.com/LorenzoBalderrama/BrothRL-TS-SDK#readme"
 }
-

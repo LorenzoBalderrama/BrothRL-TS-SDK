@@ -9,13 +9,13 @@ import { Action } from '../../domain/entities/Action';
 export interface EpsilonGreedyConfig extends PolicyConfig {
   /** Initial exploration rate */
   epsilon?: number;
-  
+
   /** Minimum exploration rate */
   epsilonMin?: number;
-  
+
   /** Exploration decay rate per step */
   epsilonDecay?: number;
-  
+
   /** The underlying policy to use for exploitation */
   basePolicy?: Policy;
 }
@@ -37,7 +37,7 @@ export class EpsilonGreedy extends Policy {
 
   constructor(config: EpsilonGreedyConfig) {
     super(config);
-    
+
     this.epsilon = config.epsilon ?? config.explorationRate ?? 0.1;
     this.epsilonMin = config.epsilonMin ?? config.minExplorationRate ?? 0.01;
     this.epsilonDecay = config.epsilonDecay ?? config.explorationDecay ?? 0.995;
@@ -145,7 +145,7 @@ export class EpsilonGreedy extends Policy {
    */
   getStats(): Record<string, any> {
     const baseStats = super.getStats();
-    
+
     return {
       ...baseStats,
       epsilon: this.epsilon,
