@@ -34,6 +34,11 @@ export interface IPolicy {
    * Load policy from JSON
    */
   fromJSON(json: any): void;
+
+  /**
+   * Reset the policy state
+   */
+  reset(): Promise<void> | void;
 }
 
 /**

@@ -185,7 +185,7 @@ export class ContextualBandit extends Policy {
    * Reset is now a dangerous operation in production
    */
   async reset(): Promise<void> {
-    super.reset();
+    await super.reset();
     await this.storage.clear();
   }
 

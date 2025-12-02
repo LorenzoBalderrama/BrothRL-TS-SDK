@@ -158,11 +158,11 @@ export class EpsilonGreedy extends Policy {
   /**
    * Reset the policy
    */
-  reset(): void {
-    super.reset();
+  async reset(): Promise<void> {
+    await super.reset();
     this.resetEpsilon();
     if (this.basePolicy) {
-      this.basePolicy.reset();
+      await this.basePolicy.reset();
     }
   }
 }

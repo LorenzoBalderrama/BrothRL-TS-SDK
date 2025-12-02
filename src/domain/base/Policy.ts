@@ -109,7 +109,7 @@ export abstract class Policy implements IPolicy {
   /**
    * Reset the policy
    */
-  reset(): void {
+  async reset(): Promise<void> {
     this.stepCount = 0;
   }
 
