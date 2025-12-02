@@ -26,5 +26,13 @@ export class MemoryStorage implements IPolicyStorage {
   async clear(): Promise<void> {
     this.store.clear();
   }
+
+  async export(): Promise<Record<string, any>> {
+    return Object.fromEntries(this.store);
+  }
+
+  async import(data: Record<string, any>): Promise<void> {
+    this.store = new Map(Object.entries(data));
+  }
 }
 

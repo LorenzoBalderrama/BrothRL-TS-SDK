@@ -57,5 +57,10 @@ export interface PolicyConfig {
   
   /** Random seed for reproducibility */
   seed?: number;
-}
 
+  /** Penalty applied to actions taken in the recent window */
+  repetitionPenalty?: number;
+  
+  /** Number of turns to look back for repetition */
+  lookbackWindow?: number;
+}

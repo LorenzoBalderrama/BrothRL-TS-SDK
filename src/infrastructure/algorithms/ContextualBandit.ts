@@ -39,13 +39,15 @@ export class ContextualBandit extends Policy {
       initialReward: config.initialReward ?? 0.0,
       confidenceBonus: config.confidenceBonus ?? 2.0,
       useUCB: config.useUCB ?? true,
-      // ... other Policy defaults handled by super
+      // Policy defaults are handled by super
       learningRate: config.learningRate ?? 0.1,
       explorationRate: config.explorationRate ?? 0.1,
       minExplorationRate: config.minExplorationRate ?? 0.01,
       explorationDecay: config.explorationDecay ?? 0.995,
       seed: config.seed ?? Date.now(),
-      actionSpace: config.actionSpace
+      actionSpace: config.actionSpace,
+      repetitionPenalty: config.repetitionPenalty ?? 1.0,
+      lookbackWindow: config.lookbackWindow ?? 2,
     };
 
     // dependency injection for storage
@@ -76,14 +78,18 @@ export class ContextualBandit extends Policy {
     let bestValue = -Infinity;
 
     // In a stateless design, we must fetch stats for all candidate actions
-    // Optimization: In the future, we could use MGET (Redis) to fetch all at once
     const actionValues = await Promise.all(
       actions.map(action => this.getActionValue(context, action.type))
     );
 
     for (let i = 0; i < actions.length; i++) {
-      if (actionValues[i] > bestValue) {
-        bestValue = actionValues[i];
+      let value = actionValues[i];
+      
+      // Apply repetition penalty using base class helper
+      value -= this.getRepetitionPenalty(actions[i].type, state);
+
+      if (value > bestValue) {
+        bestValue = value;
         bestAction = actions[i];
       }
     }
@@ -133,8 +139,6 @@ export class ContextualBandit extends Policy {
     stats.averageReward = stats.totalReward / stats.pulls;
 
     // 3. Save back to storage
-    // Note: In a high-concurrency distributed env, this should ideally be an atomic Lua script
-    // but for this phase, read-modify-write is acceptable.
     await this.saveArmStats(context, actionType, stats);
     await this.incrementContextTotalPulls(context);
   }
@@ -185,13 +189,20 @@ export class ContextualBandit extends Policy {
     await this.storage.clear();
   }
 
-  // Note: toJSON and fromJSON are less relevant in the storage-backed model
-  // but can be kept for config serialization.
-  toJSON(): any {
-    return { config: this.banditConfig };
+  async toJSON(): Promise<any> {
+    const weights = this.storage.export ? await this.storage.export() : {};
+    return {
+      config: this.banditConfig,
+      weights
+    };
   }
 
-  fromJSON(json: any): void {
-    if (json.config) Object.assign(this.banditConfig, json.config);
+  async fromJSON(json: any): Promise<void> {
+    if (json.config) {
+      Object.assign(this.banditConfig, json.config);
+    }
+    if (json.weights && this.storage.import) {
+      await this.storage.import(json.weights);
+    }
   }
 }

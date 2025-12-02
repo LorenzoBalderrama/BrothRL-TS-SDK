@@ -19,6 +19,8 @@ export abstract class Policy implements IPolicy {
       minExplorationRate: config.minExplorationRate ?? 0.01,
       explorationDecay: config.explorationDecay ?? 0.995,
       seed: config.seed ?? Date.now(),
+      repetitionPenalty: config.repetitionPenalty ?? 1.0,
+      lookbackWindow: config.lookbackWindow ?? 2,
     };
   }
 
@@ -74,6 +76,27 @@ export abstract class Policy implements IPolicy {
   }
 
   /**
+   * Helper to get repetition penalty for a given action
+   */
+  protected getRepetitionPenalty(actionType: string, state: State): number {
+    const history = state.data.history || [];
+    
+    // Filter only agent turns, take last N
+    const recentActions = history
+      .filter(turn => turn.speaker === 'agent' && turn.action)
+      .slice(-this.config.lookbackWindow)
+      .map(turn => turn.action?.type || '');
+
+    const recentCount = recentActions.filter(a => a === actionType).length;
+    
+    if (recentCount > 0) {
+      return recentCount * this.config.repetitionPenalty;
+    }
+    
+    return 0;
+  }
+
+  /**
    * Serialize to JSON
    */
   abstract toJSON(): any;
@@ -101,4 +124,3 @@ export abstract class Policy implements IPolicy {
     };
   }
 }
-

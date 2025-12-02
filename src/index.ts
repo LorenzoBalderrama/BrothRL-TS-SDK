@@ -50,4 +50,4 @@ export { Monitor, MonitorConfig, LogEntry, Metric } from './infrastructure/safet
 export { StateSchema, Feature, FeatureConfig } from './infrastructure/utils/StateSchema';
 
 // Version
-export const VERSION = '0.3.0';
+export const VERSION = '0.4.1';

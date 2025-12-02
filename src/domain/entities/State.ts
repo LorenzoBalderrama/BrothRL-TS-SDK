@@ -25,6 +25,8 @@ export interface ConversationState {
   metadata?: Record<string, any>;
 }
 
+import { ActionDefinition } from './Action';
+
 /**
  * Represents a single turn in the conversation
  */
@@ -33,6 +35,7 @@ export interface ConversationTurn {
   text: string;
   timestamp: string;
   sentiment?: 'positive' | 'negative' | 'neutral';
+  action?: ActionDefinition;
 }
 
 /**

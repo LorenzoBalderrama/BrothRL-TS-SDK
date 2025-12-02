@@ -28,5 +28,15 @@ export interface IPolicyStorage {
    * Clear all data (mainly for testing/reset)
    */
   clear(): Promise<void>;
+
+  /**
+   * Export all data (for serialization)
+   */
+  export?(): Promise<Record<string, any>>;
+
+  /**
+   * Import data (for deserialization)
+   */
+  import?(data: Record<string, any>): Promise<void>;
 }
 
