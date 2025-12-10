@@ -11,7 +11,7 @@ export {
 } from './domain/entities/schema';
 
 // Domain interfaces
-export { IPolicy, PolicyConfig } from './domain/interfaces/IPolicy';
+export { IPolicy, PolicyConfig, PolicyDecision } from './domain/interfaces/IPolicy';
 export { IPolicyStorage } from './domain/interfaces/IPolicyStorage';
 
 // Domain base classes

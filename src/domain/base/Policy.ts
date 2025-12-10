@@ -1,6 +1,6 @@
 import { State } from '../entities/State';
 import { Action, ActionSpace } from '../entities/Action';
-import { IPolicy, PolicyConfig } from '../interfaces/IPolicy';
+import { IPolicy, PolicyConfig, PolicyDecision } from '../interfaces/IPolicy';
 
 /**
  * Abstract base class for policies
@@ -28,6 +28,23 @@ export abstract class Policy implements IPolicy {
    * Select an action (must be implemented by subclasses)
    */
   abstract selectAction(state: State): Action | Promise<Action>;
+
+  /**
+   * Analyze the decision process for a given state
+   * Default implementation wraps selectAction. Subclasses should override for detailed transparency.
+   */
+  async analyzeAction(state: State): Promise<PolicyDecision> {
+    const action = await this.selectAction(state);
+    return {
+      action,
+      explanation: {
+        reason: "Policy does not support detailed explanation yet.",
+        confidence: 1.0, // Placeholder
+        features: {},
+        alternatives: []
+      }
+    };
+  }
 
   /**
    * Update the policy (must be implemented by subclasses)

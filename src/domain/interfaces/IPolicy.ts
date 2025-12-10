@@ -2,6 +2,23 @@ import { State } from '../entities/State';
 import { Action, ActionSpace } from '../entities/Action';
 
 /**
+ * Explanation for a policy decision
+ */
+export interface PolicyDecision {
+  action: Action;
+  explanation: {
+    reason: string;
+    confidence: number;
+    features: Record<string, number>; // Feature importance or values used
+    alternatives: Array<{
+      action: Action;
+      score: number;
+      reason?: string;
+    }>;
+  };
+}
+
+/**
  * Base interface for RL policies
  */
 export interface IPolicy {
@@ -11,6 +28,12 @@ export interface IPolicy {
    * @returns The selected action
    */
   selectAction(state: State): Action | Promise<Action>;
+
+  /**
+   * Select an action and return a detailed explanation of the decision
+   * @param state Current conversation state
+   */
+  analyzeAction(state: State): PolicyDecision | Promise<PolicyDecision>;
 
   /**
    * Update the policy based on observed reward

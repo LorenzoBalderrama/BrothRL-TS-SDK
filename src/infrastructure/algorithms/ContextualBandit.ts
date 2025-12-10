@@ -1,5 +1,5 @@
 import { Policy } from '../../domain/base/Policy';
-import { PolicyConfig } from '../../domain/interfaces/IPolicy';
+import { PolicyConfig, PolicyDecision } from '../../domain/interfaces/IPolicy';
 import { IPolicyStorage } from '../../domain/interfaces/IPolicyStorage';
 import { State } from '../../domain/entities/State';
 import { Action } from '../../domain/entities/Action';
@@ -64,38 +64,70 @@ export class ContextualBandit extends Policy {
       return this.selectRandomAction();
     }
 
-    return this.selectBestAction(state);
+    const { bestAction } = await this.calculateBestAction(state);
+    return bestAction;
   }
 
   /**
-   * Select the best action for a given state by querying storage
+   * Analyze the decision process for a given state
    */
-  private async selectBestAction(state: State): Promise<Action> {
+  async analyzeAction(state: State): Promise<PolicyDecision> {
+    const { bestAction, values } = await this.calculateBestAction(state);
+    
+    // Sort alternatives by score descending
+    const alternatives = values
+      .sort((a, b) => b.value - a.value)
+      .map(v => ({
+        action: v.action,
+        score: v.value,
+        reason: `Estimated reward: ${v.value.toFixed(4)}`
+      }));
+
+    return {
+      action: bestAction,
+      explanation: {
+        reason: `Selected action with highest estimated reward (${alternatives[0].score.toFixed(4)})`,
+        confidence: 1.0, // Bandits don't inherently have probability confidence like classifiers, but UCB gap could be a proxy.
+        features: {
+          contextKey: 1 // Simple feature map for now
+        },
+        alternatives
+      }
+    };
+  }
+
+  /**
+   * Helper to calculate values for all actions
+   */
+  private async calculateBestAction(state: State): Promise<{ bestAction: Action, values: { action: Action, value: number }[] }> {
     const context = state.getContextKey();
     const actions = this.actionSpace.getAllActions();
+
+    // In a stateless design, we must fetch stats for all candidate actions
+    const actionValues = await Promise.all(
+      actions.map(async action => {
+        let value = await this.getActionValue(context, action.type);
+        
+        // Apply repetition penalty
+        value -= this.getRepetitionPenalty(action.type, state);
+        
+        return { action, value };
+      })
+    );
 
     let bestAction = actions[0];
     let bestValue = -Infinity;
 
-    // In a stateless design, we must fetch stats for all candidate actions
-    const actionValues = await Promise.all(
-      actions.map(action => this.getActionValue(context, action.type))
-    );
-
-    for (let i = 0; i < actions.length; i++) {
-      let value = actionValues[i];
-      
-      // Apply repetition penalty using base class helper
-      value -= this.getRepetitionPenalty(actions[i].type, state);
-
-      if (value > bestValue) {
-        bestValue = value;
-        bestAction = actions[i];
+    for (const item of actionValues) {
+      if (item.value > bestValue) {
+        bestValue = item.value;
+        bestAction = item.action;
       }
     }
 
-    return bestAction;
+    return { bestAction, values: actionValues };
   }
+
 
   /**
    * Get the estimated value of an action in a context
@@ -206,3 +238,4 @@ export class ContextualBandit extends Policy {
     }
   }
 }
+
