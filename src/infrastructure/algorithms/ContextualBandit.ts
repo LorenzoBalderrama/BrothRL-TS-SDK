@@ -86,7 +86,9 @@ export class ContextualBandit extends Policy {
     return {
       action: bestAction,
       explanation: {
-        reason: `Selected action with highest estimated reward (${alternatives[0].score.toFixed(4)})`,
+        reason: alternatives.length > 0 
+          ? `Selected action with highest estimated reward (${alternatives[0].score.toFixed(4)})` 
+          : 'No valid actions available',
         confidence: 1.0, // Bandits don't inherently have probability confidence like classifiers, but UCB gap could be a proxy.
         features: {
           contextKey: 1 // Simple feature map for now

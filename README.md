@@ -1,13 +1,13 @@
 # BrothRL SDK
 
-> **The Broth to your AI kitchen 🍜**
+>  **The Broth to your AI kitchen 🍜**
 >
 > **Make your voice agents intelligent** - A TypeScript SDK for adding Reinforcement Learning to voice applications.
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.3-blue.svg)](https://www.typescriptlang.org/)
 
-## 🎯 What Problem Does It Solve?
+## What Problem Does It Solve?
 
 Voice apps today make **dumb decisions**. They follow hard-coded conversation flows that can't adapt or optimize. BrothRL changes that by bringing Reinforcement Learning to voice applications.
 
@@ -21,15 +21,15 @@ Voice apps today make **dumb decisions**. They follow hard-coded conversation fl
 
 ### What This SDK Provides
 
-✅ **Makes voice apps intelligent** - Apps learn what actions lead to success  
-✅ **Abstracts RL complexity** - Developers don't need to be RL experts  
-✅ **Turns data into strategy** - Historical calls → optimized policies  
-✅ **Safe production deployment** - Built-in guardrails and fallbacks  
-✅ **Platform agnostic** - Works with any voice platform (Vapi, Retell, Twilio, etc.)  
-✅ **Continuous improvement** - Policies get better as more data comes in
-✅ **Messy Data Solutions** - Built-in tools to convert raw text to structured states
+- **Makes voice apps intelligent** - Apps learn what actions lead to success  
+- **Abstracts RL complexity** - Developers don't need to be RL experts  
+- **Turns data into strategy** - Historical calls → optimized policies  
+- **Safe production deployment** - Built-in guardrails and fallbacks  
+- **Platform agnostic** - Works with any voice platform (Vapi, Retell, Twilio, etc.)  
+- **Continuous improvement** - Policies get better as more data comes in
+- **Messy Data Solutions** - Built-in tools to convert raw text to structured states
 
-## 🚀 Quick Start
+## Quick Start
 
 ### Installation
 
@@ -85,7 +85,7 @@ console.log('Agent should:', action.name);
 policy.update(state, action, 1.0); // 1.0 for success, -1.0 for failure
 ```
 
-## 📚 Core Concepts
+## Core Concepts
 
 ### State
 
@@ -190,7 +190,7 @@ const delayed = reward.calculateDelayed({
 });
 ```
 
-## 🛡️ Safety & Guardrails
+## Safety & Guardrails
 
 Production voice apps need safety constraints:
 
@@ -210,7 +210,7 @@ const guardrails = new Guardrails({
 const safeAction = guardrails.validate(state, action);
 ```
 
-## 📊 Monitoring
+## Monitoring
 
 Track what your agent is doing:
 
@@ -231,7 +231,7 @@ console.log('Average turns per conversation:', stats.averageTurnsPerConversation
 console.log(monitor.createReport());
 ```
 
-## 🔌 Platform Adapters
+## Platform Adapters
 
 ### Vapi
 
@@ -308,7 +308,7 @@ const response = await adapter.handleRequest({
 });
 ```
 
-## 📈 Training from Historical Data
+## Training from Historical Data
 
 Turn your existing call logs into an optimized policy:
 
@@ -356,7 +356,7 @@ const policyData = policy.toJSON();
 fs.writeFileSync('trained_policy.json', JSON.stringify(policyData));
 ```
 
-## 🏗️ Architecture
+## Architecture
 
 ```
 ┌─────────────────────────────────────────────────┐
@@ -389,7 +389,7 @@ fs.writeFileSync('trained_policy.json', JSON.stringify(policyData));
 └─────────────────────────────────────────────────┘
 ```
 
-## 📦 What's Included
+## What's Included
 
 ### Core Components
 - **State**: Conversation state representation
@@ -417,17 +417,17 @@ fs.writeFileSync('trained_policy.json', JSON.stringify(policyData));
 - **Guardrails**: Safety rules and constraints
 - **Monitor**: Logging and performance tracking
 
-## 🎓 Examples
+## Examples
 
 The snippets above show basic usage. Complete example applications are coming soon.
 
-## 🧪 Testing
+## Testing
 
 ```bash
 npm test
 ```
 
-## 🛣️ Roadmap
+## Roadmap
 
 - [ ] More RL algorithms (Q-Learning, Policy Gradients)
 - [ ] Advanced reward shaping
@@ -436,20 +436,20 @@ npm test
 - [ ] Cloud-based policy training
 - [ ] Pre-trained policies for common use cases
 
-## 🤝 Contributing
+## Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📄 License
+## License
 
 MIT License - see LICENSE file for details
 
-## 💬 Support
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/LorenzoBalderrama/RL-Voice-SDK/issues)
 - **Discussions**: [GitHub Discussions](https://github.com/LorenzoBalderrama/RL-Voice-SDK/discussions)
 
-## 🙏 Acknowledgments
+## Acknowledgments
 
 Built with inspiration from:
 - OpenAI's work on RLHF

@@ -1,6 +1,6 @@
 {
   "name": "broth-rl-sdk",
-  "version": "0.5.1",
+  "version": "0.5.2",
   "description": "BrothRL - Reinforcement Learning SDK for Voice Agents",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,6 +34,7 @@
   "devDependencies": {
     "@types/jest": "^29.5.11",
     "@types/node": "^20.10.6",
+    "@types/react": "^17.0.2",
     "@typescript-eslint/eslint-plugin": "^6.17.0",
     "@typescript-eslint/parser": "^6.17.0",
     "eslint": "^8.56.0",
@@ -41,7 +42,12 @@
     "ts-jest": "^29.1.1",
     "typescript": "^5.3.3"
   },
-  "dependencies": {},
+  "dependencies": {
+    "chalk": "^4.1.2",
+    "ink": "^3.2.0",
+    "meow": "^9.0.0",
+    "react": "^17.0.2"
+  },
   "repository": {
     "type": "git",
     "url": "https://github.com/LorenzoBalderrama/BrothRL-TS-SDK"
